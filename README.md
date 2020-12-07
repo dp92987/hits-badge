@@ -1,6 +1,6 @@
 ![hits](https://hits.twentythree.ru/HitsBadge.svg)
 
-# HitsBadge
+# Hits Badge
 
 ## Description
 
