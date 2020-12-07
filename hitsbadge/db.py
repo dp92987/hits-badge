@@ -36,7 +36,7 @@ def _get_conn():
     return g.conn
 
 
-def _put_conn(e=None):
+def _put_conn(exc):
     conn = g.pop('conn', None)
     if conn is not None:
         current_app.config['POOL'].putconn(conn)
