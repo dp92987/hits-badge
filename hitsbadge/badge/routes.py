@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from flask import Blueprint, abort, make_response, current_app, send_file, request
+from flask import Blueprint, abort, current_app, send_file, request
 
 from hitsbadge import db
 
@@ -8,7 +8,7 @@ badge_app = Blueprint('badge_app', __name__)
 
 
 @badge_app.route('/<string:key>.svg')
-def get_badge(key):
+def send_badge(key):
     site_id, err = _get_site(key)
     if err:
         return abort(500)
@@ -19,16 +19,18 @@ def get_badge(key):
     if err:
         return abort(500)
 
-    return _make_svg(counter)
+    svg_file = _create_svg(counter)
+
+    return send_file(svg_file, mimetype='image/svg+xml')
 
 
 @badge_app.after_request
-def add_header(request):
-    request.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, public, max-age=0'
-    request.headers['Pragma'] = 'no-cache'
-    request.headers['Expires'] = '0'
-    request.headers['Access-Control-Allow-Origin'] = '*'
-    return request
+def add_header(r):
+    r.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, public, max-age=0'
+    r.headers['Pragma'] = 'no-cache'
+    r.headers['Expires'] = '0'
+    r.headers['Access-Control-Allow-Origin'] = '*'
+    return r
 
 
 def _get_site(key):
@@ -101,15 +103,12 @@ def _count_hits(site_id):
     return hits[0], err
 
 
-def _make_svg(counter):
-    from pprint import pprint
-    from flask import request
-
-    pprint(current_app.__dict__)
-
+def _create_svg(counter):
     with open(f'{current_app.root_path}/badge/templates/template.svg') as f:
-        svg = f.read()
+        svg_text = f.read()
+
     svg_file = BytesIO()
-    svg_file.write(svg.format(counter=counter).encode('utf-8'))
+    svg_file.write(svg_text.format(counter=counter).encode('utf-8'))
     svg_file.seek(0)
-    return send_file(svg_file, mimetype='image/svg+xml')
+
+    return svg_file
