@@ -15,8 +15,8 @@ def send_badge(key):
     if not site_id:
         return abort(404)
 
-    count = request.args.get('count', default=True, type=lambda x: x != '0')
-    counter, err = _add_and_count_hits(site_id, count)
+    nocount = request.args.get('nocount', default=False, type=lambda x: x == '1')
+    counter, err = _add_and_count_hits(site_id, nocount)
     if err:
         return abort(500)
 
@@ -48,8 +48,8 @@ def _get_site(key):
     return site_id, err
 
 
-def _add_and_count_hits(site_id, count):
-    if count:
+def _add_and_count_hits(site_id, nocount):
+    if not nocount:
         err = _add_hit(site_id)
         if err:
             return None, err
