@@ -1,4 +1,4 @@
-![hits](https://hits.twentythree.ru/HitsBadge.svg)
+[![hits](https://hits.twentythree.ru/hits-badge.svg)](https://github.com/dp92987/hits-badge)
 
 # Hits Badge
 
@@ -15,4 +15,4 @@ Hits counter badge for GitHub.
 
 ## Demo
 
-https://hits.twentythree.ru/HitsBadge.svg
+https://hits.twentythree.ru/hits-badge.svg
