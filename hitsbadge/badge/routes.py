@@ -1,10 +1,15 @@
 from io import BytesIO
 
-from flask import Blueprint, abort, current_app, send_file, request
+from flask import Blueprint, abort, current_app, send_file, request, redirect
 
 from hitsbadge import db
 
 badge_app = Blueprint('badge_app', __name__)
+
+
+@badge_app.route('/')
+def index():
+    return redirect(current_app.config['GITHUB_PAGE'])
 
 
 @badge_app.route('/<string:key>.svg')

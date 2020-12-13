@@ -22,6 +22,8 @@ def create_app():
     # Variables defined here will override those in the default configuration
     app.config.from_envvar('HITSBADGE_CONFIG_FILE', silent=True)
 
+    app.config['GITHUB_PAGE'] = 'https://github.com/dp92987/hits-badge'
+
     with app.app_context():
         db.init_app(app)
         app.register_blueprint(badge_app)
