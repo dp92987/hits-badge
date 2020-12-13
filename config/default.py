@@ -8,7 +8,7 @@ DATABASE = {
     'dbname': 'db_name',
 }
 
-DEBUG = True
+DEBUG = False
 
 PROXY_FIX = False
 PROXY_FIX_PARAMS = {
