@@ -15,4 +15,4 @@ Hits counter badge for GitHub.
 
 ## Demo
 
-https://hits.twentythree.ru/hits-badge.svg
+https://hits.deltapapa.io/hits-badge.svg
