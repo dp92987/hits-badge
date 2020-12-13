@@ -1,4 +1,4 @@
-[![hits](https://hits.twentythree.ru/hits-badge.svg)](https://github.com/dp92987/hits-badge)
+[![hits](https://hits.deltapapa.io/hits-badge.svg)](https://github.com/dp92987/hits-badge)
 
 # Hits Badge
 
