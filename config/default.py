@@ -9,3 +9,12 @@ DATABASE = {
 }
 
 DEBUG = True
+
+PROXY_FIX = False
+PROXY_FIX_PARAMS = {
+    'x_for': 1,
+    'x_proto': 1,
+    'x_host': 0,
+    'x_port': 0,
+    'x_prefix': 0,
+}
