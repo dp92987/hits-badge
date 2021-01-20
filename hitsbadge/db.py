@@ -33,6 +33,11 @@ def execute(sql, params=None, batch=False, cursor_factory=None, fetchone=False):
 def _get_conn():
     if 'conn' not in g:
         g.conn = current_app.config['POOL'].getconn()
+
+    if not _is_conn_alive():
+        del g.conn
+        g.conn = _get_conn()
+
     return g.conn
 
 
@@ -40,3 +45,14 @@ def _put_conn(exc):
     conn = g.pop('conn', None)
     if conn is not None:
         current_app.config['POOL'].putconn(conn)
+
+
+def _is_conn_alive():
+    curs = g.conn.cursor()
+    try:
+        curs.execute('SELECT 1;')
+        return True
+    except psycopg2.OperationalError:
+        return False
+    finally:
+        curs.close()
