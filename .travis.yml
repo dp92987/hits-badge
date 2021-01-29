@@ -3,7 +3,6 @@ if: tag IS blank
 services:
   - docker
 before_script:
-  - echo -1 > /tmp/deploy_status
   - DOCKER_IMAGE=$DOCKER_USERNAME/$APP:$(git describe --always --abbrev --tags --long)
   - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
   - docker build -t $DOCKER_IMAGE .
@@ -18,8 +17,9 @@ before_deploy:
   - ssh-add ~/.ssh/deploy_rsa
 deploy:
   - provider: script
-    script: ./.travis/deploy.sh $HOST1 $USER1 $PASSWORD1 $DOCKER_IMAGE && echo 0 > /tmp/deploy_status || echo 1 > /tmp/deploy_status
+    script: ./.travis/deploy.sh $HOST1 $USER1 $PASSWORD1 $DOCKER_IMAGE
     on:
       branch: master
-after_script:
-  - ./.travis/telegram.sh "$(cat /tmp/deploy_status)"
+notifications:
+  slack:
+    secure: PoFE9Cw8ab6p3CHOvX2mzlBEau69xmdKpUnwt7l2WErq+E+g5c6uZgs1EP3isTiLX6q4jQBsPeQukzUqcMRDyEo2I10SNehcbuofJZCPut7LpoluSXhz/Uw8ZjcTFl8StP2Bed5a7IRAcr8nRH5ELA6lYGiZhyC+tdhaZ/R+K4i6qOmEt+jglk2iu2YdOCWrV3iulmbAfx3OGPcvYjY+dswgD/QR05kOMxGn5+nwE8Q2856lPlF2wiXWe7yiitfNvGyvZQcIcJg3Z2TmYhkfUI9vXVe+ibMHzcaM1uShic6ef/m248DfV/YIHZaT/trrRNJ7dJ/d4jvdkeixLgJs9TYyjxR6RhWpofH1svHa7zq1BZB1gVDAZJdHgrA+CpjSbaJN132F56SySVmyJ9ZoEQZIGnxEqOKZ9bCXnr6rTeJBVN7T47tiZI8bRKABGfDaj0p5EhtJI9jsX4iDaOnKE2w/b2hlyHkntD3SZEklA68cyEt0AgPoF5BpUpPfLS4UZeda0MQa0Z4sxfyZF1qkPCSk7/IcliLHf4ZfWKj0MqB6hC8Tyv1hMPPNITMm5/ncu6h+A58MwC+ERJLkV2Eyh6l9EXatKHPzP5plNiW90FSGgEfKLipV+c2V8rbDPosJpacPoAp86qVxVru63bQPfwj+uSSGldKLxI4RWZKGgNM=
