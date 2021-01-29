@@ -8,21 +8,22 @@ before_script:
   - docker build -t $DOCKER_IMAGE .
 script:
   - docker run -d $DOCKER_IMAGE
-before_deploy:
+after_success:
   - docker push $DOCKER_IMAGE
-  - echo "$KNOWN_HOST1" >> ~/.ssh/known_hosts
-  - echo "$KNOWN_HOST2" >> ~/.ssh/known_hosts
+before_deploy:
+  - echo $HOST1_KNOWN >> ~/.ssh/known_hosts
+  - echo $HOST2_KNOWN >> ~/.ssh/known_hosts
   - openssl aes-256-cbc -K $encrypted_db2095f63ba3_key -iv $encrypted_db2095f63ba3_iv -in .travis/deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
   - eval $(ssh-agent -s)
   - chmod 600 ~/.ssh/deploy_rsa
   - ssh-add ~/.ssh/deploy_rsa
 deploy:
   - provider: script
-    script: ./.travis/deploy.sh $HOST1 $USER1 $PASSWORD1 $DOCKER_IMAGE
+    script: ./.travis/deploy.sh $HOST1 $HOST1_USER $HOST1_PASSWORD $DOCKER_IMAGE
     on:
       branch: master
   - provider: script
-    script: ./.travis/deploy.sh $HOST2 $USER2 $PASSWORD2 $DOCKER_IMAGE
+    script: ./.travis/deploy.sh $HOST2 $HOST2_USER $HOST2_PASSWORD $DOCKER_IMAGE
     on:
       branch: master
 notifications:
