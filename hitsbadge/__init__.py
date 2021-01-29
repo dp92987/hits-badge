@@ -14,11 +14,11 @@ def create_app():
     app.config.from_object('config.default')
 
     # Load the configuration from the instance folder
-    app.config.from_pyfile(f'{os.getenv("FLASK_ENV")}.py', silent=True)
+    app.config.from_pyfile(f'{os.getenv("HITSBADGE_ENV")}.py', silent=True)
 
-    # Load the file specified by the APP_CONFIG_FILE environment variable
+    # Load the file specified by the HITSBADGE_CONFIG environment variable
     # Variables defined here will override those in the default configuration
-    app.config.from_envvar('HITSBADGE_CONFIG_FILE', silent=True)
+    app.config.from_envvar('HITSBADGE_CONFIG', silent=True)
 
     if app.config['PROXY_FIX']:
         app.wsgi_app = ProxyFix(app.wsgi_app, **app.config['PROXY_FIX_PARAMS'])
