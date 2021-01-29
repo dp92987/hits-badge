@@ -1,0 +1,31 @@
+language: generic
+if: tag IS blank
+services:
+  - docker
+before_script:
+  - DOCKER_IMAGE=$DOCKER_USERNAME/$APP:$(git describe --always --abbrev --tags --long)
+  - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+  - docker build -t $DOCKER_IMAGE .
+script:
+  - docker run -d $DOCKER_IMAGE
+after_success:
+  - docker push $DOCKER_IMAGE
+before_deploy:
+  - echo $HOST1_KNOWN >> ~/.ssh/known_hosts
+  - echo $HOST2_KNOWN >> ~/.ssh/known_hosts
+  - openssl aes-256-cbc -K $encrypted_db2095f63ba3_key -iv $encrypted_db2095f63ba3_iv -in .travis/deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
+  - eval $(ssh-agent -s)
+  - chmod 600 ~/.ssh/deploy_rsa
+  - ssh-add ~/.ssh/deploy_rsa
+deploy:
+  - provider: script
+    script: ./.travis/deploy.sh $HOST1 $HOST1_USER $HOST1_PASSWORD $DOCKER_IMAGE
+    on:
+      branch: master
+  - provider: script
+    script: ./.travis/deploy.sh $HOST2 $HOST2_USER $HOST2_PASSWORD $DOCKER_IMAGE
+    on:
+      branch: master
+notifications:
+  slack:
+    secure: PoFE9Cw8ab6p3CHOvX2mzlBEau69xmdKpUnwt7l2WErq+E+g5c6uZgs1EP3isTiLX6q4jQBsPeQukzUqcMRDyEo2I10SNehcbuofJZCPut7LpoluSXhz/Uw8ZjcTFl8StP2Bed5a7IRAcr8nRH5ELA6lYGiZhyC+tdhaZ/R+K4i6qOmEt+jglk2iu2YdOCWrV3iulmbAfx3OGPcvYjY+dswgD/QR05kOMxGn5+nwE8Q2856lPlF2wiXWe7yiitfNvGyvZQcIcJg3Z2TmYhkfUI9vXVe+ibMHzcaM1uShic6ef/m248DfV/YIHZaT/trrRNJ7dJ/d4jvdkeixLgJs9TYyjxR6RhWpofH1svHa7zq1BZB1gVDAZJdHgrA+CpjSbaJN132F56SySVmyJ9ZoEQZIGnxEqOKZ9bCXnr6rTeJBVN7T47tiZI8bRKABGfDaj0p5EhtJI9jsX4iDaOnKE2w/b2hlyHkntD3SZEklA68cyEt0AgPoF5BpUpPfLS4UZeda0MQa0Z4sxfyZF1qkPCSk7/IcliLHf4ZfWKj0MqB6hC8Tyv1hMPPNITMm5/ncu6h+A58MwC+ERJLkV2Eyh6l9EXatKHPzP5plNiW90FSGgEfKLipV+c2V8rbDPosJpacPoAp86qVxVru63bQPfwj+uSSGldKLxI4RWZKGgNM=
