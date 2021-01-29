@@ -1,0 +1,25 @@
+language: generic
+if: tag IS blank
+services:
+  - docker
+before_script:
+  - echo -1 > /tmp/deploy_status
+  - DOCKER_IMAGE=$DOCKER_USERNAME/$APP:$(git describe --always --abbrev --tags --long)
+  - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+  - docker build -t $DOCKER_IMAGE .
+script:
+  - docker run -d $DOCKER_IMAGE
+before_deploy:
+  - docker push $DOCKER_IMAGE
+  - echo "$KNOWN_HOST1" >> ~/.ssh/known_hosts
+  - openssl aes-256-cbc -K $encrypted_db2095f63ba3_key -iv $encrypted_db2095f63ba3_iv -in .travis/deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
+  - eval $(ssh-agent -s)
+  - chmod 600 ~/.ssh/deploy_rsa
+  - ssh-add ~/.ssh/deploy_rsa
+deploy:
+  - provider: script
+    script: ./.travis/deploy.sh $HOST1 $USER1 $PASSWORD1 $DOCKER_IMAGE && echo 0 > /tmp/deploy_status || echo 1 > /tmp/deploy_status
+    on:
+      branch: master
+after_script:
+  - ./.travis/telegram.sh "$(cat /tmp/deploy_status)"
