@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ev
 
 HOST=$1
 USER=$2
