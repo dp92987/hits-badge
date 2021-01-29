@@ -17,7 +17,7 @@ fi
 
 sudo docker pull $DOCKER_IMAGE
 
-CONTAINER_ID=$(sudo docker ps -aqf "name=$APP_ENV")
+CONTAINER_ID=$(sudo docker ps -aqf "name=${APP}_$ENV")
 
 if ! [ -z $CONTAINER_ID ]; then
   sudo docker stop $CONTAINER_ID
