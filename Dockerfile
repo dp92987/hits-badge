@@ -7,6 +7,4 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-ENV HITSBADGE_ENV production
-
-CMD ["gunicorn", "hitsbadge:create_app()", "--bind=0.0.0.0:8001", "--workers=5"]
+ENTRYPOINT ["gunicorn", "hitsbadge:create_app()", "--bind=0.0.0.0:5000"]
