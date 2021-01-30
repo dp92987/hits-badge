@@ -1,10 +1,11 @@
 from io import BytesIO
 
+import requests
 from flask import Blueprint, abort, current_app, send_file, request, redirect
 
 from hitsbadge import db
 
-badge_app = Blueprint('badge_app', __name__)
+badge_app = Blueprint('badge_app', __name__, template_folder='templates')
 
 
 @badge_app.route('/')
@@ -12,16 +13,30 @@ def index():
     return redirect(current_app.config['GITHUB_PAGE'])
 
 
-@badge_app.route('/<string:key>.svg')
-def send_badge(key):
-    site_id, err = _get_site(key)
+@badge_app.route('/<string:provider_name>/<string:user_name>/<string:repo_name>.svg')
+def svg(provider_name, user_name, repo_name):
+    provider, err = _get_provider(provider_name)
     if err:
         return abort(500)
-    if not site_id:
-        return abort(404)
+    if not provider:
+        return _repo_not_found()
+
+    repo, err = _get_repo(provider['url'], user_name, repo_name)
+    if err:
+        return abort(500)
+    if not repo:
+        return _repo_not_found()
+
+    repo_id, err = _get_repo_id(provider['id'], repo['id'])
+    if err:
+        return abort(500)
+    if not repo_id:
+        repo_id, err = _create_repo(provider['id'], repo)
+        if err:
+            return abort(500)
 
     nocount = request.args.get('nocount', default=False, type=lambda x: x == '1')
-    counter, err = _add_and_count_hits(site_id, nocount)
+    counter, err = _add_and_count_hits(repo_id, nocount)
     if err:
         return abort(500)
 
@@ -39,73 +54,123 @@ def add_header(r):
     return r
 
 
-def _get_site(key):
+def _repo_not_found():
+    return send_file(_create_svg('not found'), mimetype='image/svg+xml')
+
+
+def _get_provider(name):
     query = '''
             SELECT
-                s.id
+                p.id, p.url
             FROM
-                sites s
+                providers p
             WHERE
-                key=%(key)s;
+                p.name = %(name)s;
             '''
-    param = {'key': key}
-    site_id, err = db.execute(query, param, fetchone=True)
-    return site_id, err
+    param = {'name': name}
+    provider, err = db.execute(query, param, fetchone=True, cursor_factory='DictCursor')
+    return provider, err
 
 
-def _add_and_count_hits(site_id, nocount):
-    if not nocount:
-        err = _add_hit(site_id)
-        if err:
-            return None, err
+def _get_repo(provider_url, user_name, repo_name):
+    url = provider_url.replace('user_name', user_name).replace('repo_name', repo_name)
 
-    initial_hits, err = _get_initial_hits(site_id)
+    r = requests.get(url)
+    if r.status_code == 404:
+        return None, None
+    if r.status_code != 200:
+        return None, r.status_code
+
+    return r.json(), None
+
+
+def _get_repo_id(provider_id, internal_id):
+    query = '''
+            SELECT
+                r.id
+            FROM
+                repos r
+            WHERE
+                r.provider_id = %(provider_id)s AND r.internal_id = %(internal_id)s;
+            '''
+    param = {'provider_id': provider_id, 'internal_id': internal_id}
+    result, err = db.execute(query, param, fetchone=True)
     if err:
         return None, err
 
-    hits, err = _count_hits(site_id)
+    return result[0] if result else None, None
+
+
+def _create_repo(provider_id, repo):
+    query = '''
+            INSERT INTO
+                repos (provider_id, internal_id, name)
+            VALUES
+                (%(provider_id)s, %(internal_id)s, %(name)s)
+            RETURNING
+                id;
+            '''
+    param = {'provider_id': provider_id, 'internal_id': repo['id'], 'name': repo['name']}
+    result, err = db.execute(query, param)
+    if err:
+        return None, err
+
+    return result[0][0] if result else None, None
+
+
+def _add_and_count_hits(repo_id, nocount):
+    if not nocount:
+        err = _add_hit(repo_id)
+        if err:
+            return None, err
+
+    initial_hits, err = _get_initial_hits(repo_id)
+    if err:
+        return None, err
+
+    hits, err = _count_hits(repo_id)
     if err:
         return None, err
 
     return initial_hits + hits, None
 
 
-def _add_hit(site_id):
+def _add_hit(repo_id):
     query = '''
             INSERT INTO
-                hits (id, timestamp, site_id, remote_addr)
+                hits (id, timestamp, repo_id, remote_addr)
             VALUES
-                (default, default, %(site_id)s, %(remote_addr)s);
+                (default, default, %(repo_id)s, %(remote_addr)s);
             '''
-    param = {'site_id': site_id, 'remote_addr': request.environ['REMOTE_ADDR']}
+    param = {'repo_id': repo_id, 'remote_addr': request.environ['REMOTE_ADDR']}
     _, err = db.execute(query, param)
     return err
 
 
-def _get_initial_hits(site_id):
+def _get_initial_hits(repo_id):
     query = '''
             SELECT
-                s.initial_hits
+                r.initial_hits
             FROM
-                sites s
+                repos r
             WHERE
-                s.id=%(site_id)s;
+                r.id = %(repo_id)s;
             '''
-    param = {'site_id': site_id}
+    param = {'repo_id': repo_id}
     initial_hits, err = db.execute(query, param, fetchone=True)
     return initial_hits[0], err
 
 
-def _count_hits(site_id):
+def _count_hits(repo_id):
     query = '''
             SELECT
                 COUNT(h.id)
             FROM
                 hits h
             WHERE
-                h.site_id=%(site_id)s;
+                h.repo_id = %(repo_id)s;
             '''
-    param = {'site_id': site_id}
+    param = {'repo_id': repo_id}
     hits, err = db.execute(query, param, fetchone=True)
     return hits[0], err
 
