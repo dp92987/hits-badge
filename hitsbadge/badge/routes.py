@@ -27,11 +27,11 @@ def svg(provider_name, user_name, repo_name):
     if not repo:
         return _repo_not_found()
 
-    repo_id, err = _get_repo_id(provider['id'], repo['id'])
+    repo_id, err = _get_repo_id(provider['id'], repo[provider['id_field_name']])
     if err:
         return abort(500)
     if not repo_id:
-        repo_id, err = _create_repo(provider['id'], repo)
+        repo_id, err = _create_repo(provider, repo)
         if err:
             return abort(500)
 
@@ -61,7 +61,7 @@ def _repo_not_found():
 def _get_provider(name):
     query = '''
             SELECT
-                p.id, p.url
+                p.id, p.url, p.id_field_name
             FROM
                 providers p
             WHERE
@@ -93,7 +93,7 @@ def _get_repo_id(provider_id, internal_id):
             WHERE
                 r.provider_id = %(provider_id)s AND r.internal_id = %(internal_id)s;
             '''
-    param = {'provider_id': provider_id, 'internal_id': internal_id}
+    param = {'provider_id': provider_id, 'internal_id': str(internal_id)}
     result, err = db.execute(query, param, fetchone=True)
     if err:
         return None, err
@@ -101,7 +101,7 @@ def _get_repo_id(provider_id, internal_id):
     return result[0] if result else None, None
 
 
-def _create_repo(provider_id, repo):
+def _create_repo(provider, repo):
     query = '''
             INSERT INTO
                 repos (provider_id, internal_id, name)
@@ -110,7 +110,7 @@ def _create_repo(provider_id, repo):
             RETURNING
                 id;
             '''
-    param = {'provider_id': provider_id, 'internal_id': repo['id'], 'name': repo['name']}
+    param = {'provider_id': provider['id'], 'internal_id': repo[provider['id_field_name']], 'name': repo['name']}
     result, err = db.execute(query, param)
     if err:
         return None, err

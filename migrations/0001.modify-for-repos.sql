@@ -2,7 +2,8 @@ create table providers
 (
 	id serial not null,
 	name varchar not null,
-	url varchar not null
+	url varchar not null,
+	id_field_name varchar not null
 );
 
 create unique index providers_id_uindex
@@ -31,7 +32,7 @@ alter table repos
 	add provider_id int;
 
 alter table repos
-	add internal_id int;
+	add internal_id varchar;
 
 alter table repos
 	add name varchar;
