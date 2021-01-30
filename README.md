@@ -4,7 +4,7 @@
 
 ## Description
 
-Hits counter badge for GitHub and GitLab projects.
+Hits counter badge for GitHub, GitLab and Bitbucket public repositores.
 
 ## Usage
 
@@ -16,7 +16,8 @@ Insert the following snippet to your README.md:
 
 Supported providers:
 - [x] github
-- [x] gitlab 
+- [x] gitlab
+- [x] bitbucket
 
 For example:
 
