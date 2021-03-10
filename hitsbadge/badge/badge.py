@@ -5,15 +5,15 @@ from flask import Blueprint, abort, current_app, send_file, request, redirect
 
 from hitsbadge import db
 
-badge_app = Blueprint('badge_app', __name__, template_folder='templates')
+badge_bp = Blueprint('badge_bp', __name__, template_folder='templates')
 
 
-@badge_app.route('/')
+@badge_bp.route('/')
 def index():
     return redirect(current_app.config['GITHUB_PAGE'])
 
 
-@badge_app.route('/<string:provider_name>/<string:user_name>/<string:repo_name>.svg')
+@badge_bp.route('/<string:provider_name>/<string:user_name>/<string:repo_name>.svg')
 def svg(provider_name, user_name, repo_name):
     provider, err = _get_provider(provider_name)
     if err:
@@ -45,7 +45,7 @@ def svg(provider_name, user_name, repo_name):
     return send_file(svg_file, mimetype='image/svg+xml')
 
 
-@badge_app.after_request
+@badge_bp.after_request
 def add_header(r):
     r.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, public, max-age=0'
     r.headers['Pragma'] = 'no-cache'
@@ -79,7 +79,7 @@ def _get_repo(provider_url, user_name, repo_name):
     if r.status_code == 404:
         return None, None
     if r.status_code != 200:
-        return None, r.status_code
+        return None, (r.status_code, r.reason)
 
     return r.json(), None
 

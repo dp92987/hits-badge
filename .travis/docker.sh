@@ -24,6 +24,6 @@ if ! [ -z $CONTAINER_ID ]; then
   sudo docker rm $CONTAINER_ID
 fi
 
-sudo docker run --detach --name ${APP}_$ENV --env HITSBADGE_ENV=$ENV --restart=always --publish 127.0.0.1:$PORT:5000 --volume /home/$USER/.$APP:/usr/$APP/instance $DOCKER_IMAGE "--workers=$WORKERS"
+sudo docker run --detach --name ${APP}_$ENV --env FLASK_ENV=$ENV --restart=always --publish 127.0.0.1:$PORT:5000 --volume /home/$USER/.$APP:/usr/$APP/instance $DOCKER_IMAGE "--workers=$WORKERS"
 
 sudo docker system prune -f

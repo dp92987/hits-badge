@@ -4,7 +4,7 @@ from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from . import db
-from .badge.routes import badge_app
+from .badge.badge import badge_bp
 
 
 def create_app():
@@ -14,11 +14,11 @@ def create_app():
     app.config.from_object('config.default')
 
     # Load the configuration from the instance folder
-    app.config.from_pyfile(f'{os.getenv("HITSBADGE_ENV")}.py', silent=True)
+    app.config.from_pyfile(f'{os.getenv("FLASK_ENV")}.py', silent=True)
 
-    # Load the file specified by the HITSBADGE_CONFIG environment variable
+    # Load the file specified by the FLASK_SETTINGS environment variable
     # Variables defined here will override those in the default configuration
-    app.config.from_envvar('HITSBADGE_CONFIG', silent=True)
+    app.config.from_envvar('FLASK_SETTINGS', silent=True)
 
     if app.config['PROXY_FIX']:
         app.wsgi_app = ProxyFix(app.wsgi_app, **app.config['PROXY_FIX_PARAMS'])
@@ -27,6 +27,6 @@ def create_app():
 
     with app.app_context():
         db.init_app(app)
-        app.register_blueprint(badge_app)
+        app.register_blueprint(badge_bp)
 
     return app
