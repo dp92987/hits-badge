@@ -63,8 +63,8 @@ def _get_provider(name):
             WHERE
                 p.name = %(name)s;
             '''
-    param = {'name': name}
-    provider, err = db.execute(query, param, fetchone=True, cursor_factory='DictCursor')
+    vars_ = {'name': name}
+    provider, err = db.execute(query, vars_, fetchone=True, cursor_factory='DictCursor')
     return provider, err
 
 
@@ -89,8 +89,8 @@ def _get_repo_id(provider_id, internal_id):
             WHERE
                 r.provider_id = %(provider_id)s AND r.internal_id = %(internal_id)s;
             '''
-    param = {'provider_id': provider_id, 'internal_id': str(internal_id)}
-    result, err = db.execute(query, param, fetchone=True)
+    vars_ = {'provider_id': provider_id, 'internal_id': str(internal_id)}
+    result, err = db.execute(query, vars_, fetchone=True)
     if err:
         return None, err
 
@@ -125,13 +125,13 @@ def _create_repo(provider, repo, owner_id):
             RETURNING
                 id;
             '''
-    param = {
+    vars_ = {
         'provider_id': provider['id'],
         'internal_id': repo[provider['field_names']['id']],
         'name': repo['name'],
         'owner_id': owner_id
     }
-    result, err = db.execute(query, param)
+    result, err = db.execute(query, vars_)
     if err:
         return None, err
 
@@ -148,8 +148,8 @@ def _update_repo(repo_id, repo, owner_id):
             WHERE
                 r.id = %(repo_id)s;
             '''
-    param = {'name': repo['name'], 'repo_id': repo_id, 'owner_id': owner_id}
-    _, err = db.execute(query, param)
+    vars_ = {'name': repo['name'], 'repo_id': repo_id, 'owner_id': owner_id}
+    _, err = db.execute(query, vars_)
     return err
 
 
@@ -180,8 +180,8 @@ def _get_owner_id(provider_id, internal_id):
             WHERE
                 o.provider_id = %(provider_id)s AND o.internal_id = %(internal_id)s;
             '''
-    param = {'provider_id': provider_id, 'internal_id': str(internal_id)}
-    result, err = db.execute(query, param, fetchone=True)
+    vars_ = {'provider_id': provider_id, 'internal_id': str(internal_id)}
+    result, err = db.execute(query, vars_, fetchone=True)
     if err:
         return None, err
 
@@ -197,9 +197,9 @@ def _create_owner(provider, owner):
             RETURNING
                 id;
             '''
-    param = {'provider_id': provider['id'], 'internal_id': owner[provider['field_names']['owner_id']],
+    vars_ = {'provider_id': provider['id'], 'internal_id': owner[provider['field_names']['owner_id']],
              'name': owner[provider['field_names']['owner_name']]}
-    result, err = db.execute(query, param)
+    result, err = db.execute(query, vars_)
     if err:
         return None, err
 
@@ -215,8 +215,8 @@ def _update_owner(owner_id, provider, owner):
             WHERE
                 o.id = %(owner_id)s;
             '''
-    param = {'name': owner[provider['field_names']['owner_name']], 'owner_id': owner_id}
-    _, err = db.execute(query, param)
+    vars_ = {'name': owner[provider['field_names']['owner_name']], 'owner_id': owner_id}
+    _, err = db.execute(query, vars_)
     return err
 
 
@@ -244,8 +244,8 @@ def _add_hit(repo_id):
             VALUES
                 (default, default, %(repo_id)s, %(remote_addr)s);
             '''
-    param = {'repo_id': repo_id, 'remote_addr': request.environ['REMOTE_ADDR']}
-    _, err = db.execute(query, param)
+    vars_ = {'repo_id': repo_id, 'remote_addr': request.environ['REMOTE_ADDR']}
+    _, err = db.execute(query, vars_)
     return err
 
 
@@ -258,8 +258,8 @@ def _get_initial_hits(repo_id):
             WHERE
                 r.id = %(repo_id)s;
             '''
-    param = {'repo_id': repo_id}
-    initial_hits, err = db.execute(query, param, fetchone=True)
+    vars_ = {'repo_id': repo_id}
+    initial_hits, err = db.execute(query, vars_, fetchone=True)
     return initial_hits[0], err
 
 
@@ -272,8 +272,8 @@ def _count_hits(repo_id):
             WHERE
                 h.repo_id = %(repo_id)s;
             '''
-    param = {'repo_id': repo_id}
-    hits, err = db.execute(query, param, fetchone=True)
+    vars_ = {'repo_id': repo_id}
+    hits, err = db.execute(query, vars_, fetchone=True)
     return hits[0], err
 
 

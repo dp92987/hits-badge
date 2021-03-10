@@ -9,16 +9,16 @@ def init_app(app):
     app.teardown_appcontext(_put_conn)
 
 
-def execute(sql, params=None, batch=False, cursor_factory=None, fetchone=False):
+def execute(sql, vars_=None, batch=False, cursor_factory=None, fetchone=False):
     factories = {'DictCursor': psycopg2.extras.DictCursor,
                  'RealDictCursor': psycopg2.extras.RealDictCursor}
     conn = _get_conn()
     curs = conn.cursor(cursor_factory=factories.get(cursor_factory))
     try:
         if batch:
-            psycopg2.extras.execute_batch(curs, sql, params)
+            psycopg2.extras.execute_batch(curs, sql, vars_)
         else:
-            curs.execute(sql, params)
+            curs.execute(sql, vars_)
         result = curs.fetchone() if fetchone else curs.fetchall() if curs.description else None
     except psycopg2.Error as err:
         conn.rollback()
