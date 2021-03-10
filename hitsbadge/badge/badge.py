@@ -27,13 +27,9 @@ def svg(provider_name, user_name, repo_name):
     if not repo:
         return _repo_not_found()
 
-    repo_id, err = _get_repo_id(provider['id'], repo[provider['id_field_name']])
+    repo_id, err = _create_or_update_repo(provider, repo)
     if err:
         return abort(500)
-    if not repo_id:
-        repo_id, err = _create_repo(provider, repo)
-        if err:
-            return abort(500)
 
     nocount = request.args.get('nocount', default=False, type=lambda x: x == '1')
     counter, err = _add_and_count_hits(repo_id, nocount)
@@ -61,7 +57,7 @@ def _repo_not_found():
 def _get_provider(name):
     query = '''
             SELECT
-                p.id, p.url, p.id_field_name
+                p.id, p.url, p.field_names
             FROM
                 providers p
             WHERE
@@ -101,21 +97,127 @@ def _get_repo_id(provider_id, internal_id):
     return result[0] if result else None, None
 
 
-def _create_repo(provider, repo):
+def _create_or_update_repo(provider, repo):
+    repo_id, err = _get_repo_id(provider['id'], repo[provider['field_names']['id']])
+    if err:
+        return None, err
+
+    owner_id, err = _create_or_update_owner(provider, repo)
+    if err:
+        return None, err
+
+    if not repo_id:
+        repo_id, err = _create_repo(provider, repo, owner_id)
+    else:
+        err = _update_repo(repo_id, repo, owner_id)
+    if err:
+        return None, err
+
+    return repo_id, None
+
+
+def _create_repo(provider, repo, owner_id):
     query = '''
             INSERT INTO
-                repos (provider_id, internal_id, name)
+                repos (provider_id, internal_id, name, owner_id)
             VALUES
-                (%(provider_id)s, %(internal_id)s, %(name)s)
+                (%(provider_id)s, %(internal_id)s, %(name)s, %(owner_id)s)
             RETURNING
                 id;
             '''
-    param = {'provider_id': provider['id'], 'internal_id': repo[provider['id_field_name']], 'name': repo['name']}
+    param = {
+        'provider_id': provider['id'],
+        'internal_id': repo[provider['field_names']['id']],
+        'name': repo['name'],
+        'owner_id': owner_id
+    }
     result, err = db.execute(query, param)
     if err:
         return None, err
 
     return result[0][0] if result else None, None
+
+
+def _update_repo(repo_id, repo, owner_id):
+    query = '''
+            UPDATE
+                repos r
+            SET
+                name = %(name)s,
+                owner_id = %(owner_id)s
+            WHERE
+                r.id = %(repo_id)s;
+            '''
+    param = {'name': repo['name'], 'repo_id': repo_id, 'owner_id': owner_id}
+    _, err = db.execute(query, param)
+    return err
+
+
+def _create_or_update_owner(provider, repo):
+    owner_field_name = provider['field_names']['owner']
+    owner_id_field_name = provider['field_names']['owner_id']
+
+    owner_id, err = _get_owner_id(provider['id'], repo[owner_field_name][owner_id_field_name])
+    if err:
+        return None, err
+
+    if not owner_id:
+        owner_id, err = _create_owner(provider, repo[owner_field_name])
+    else:
+        err = _update_owner(owner_id, provider, repo[owner_field_name])
+    if err:
+        return None, err
+
+    return owner_id, None
+
+
+def _get_owner_id(provider_id, internal_id):
+    query = '''
+            SELECT
+                o.id
+            FROM
+                owners o
+            WHERE
+                o.provider_id = %(provider_id)s AND o.internal_id = %(internal_id)s;
+            '''
+    param = {'provider_id': provider_id, 'internal_id': str(internal_id)}
+    result, err = db.execute(query, param, fetchone=True)
+    if err:
+        return None, err
+
+    return result[0] if result else None, None
+
+
+def _create_owner(provider, owner):
+    query = '''
+            INSERT INTO
+                owners (provider_id, internal_id, name)
+            VALUES
+                (%(provider_id)s, %(internal_id)s, %(name)s)
+            RETURNING
+                id;
+            '''
+    param = {'provider_id': provider['id'], 'internal_id': owner[provider['field_names']['owner_id']],
+             'name': owner[provider['field_names']['owner_name']]}
+    result, err = db.execute(query, param)
+    if err:
+        return None, err
+
+    return result[0][0] if result else None, None
+
+
+def _update_owner(owner_id, provider, owner):
+    query = '''
+            UPDATE
+                owners o
+            SET
+                name = %(name)s
+            WHERE
+                o.id = %(owner_id)s;
+            '''
+    param = {'name': owner[provider['field_names']['owner_name']], 'owner_id': owner_id}
+    _, err = db.execute(query, param)
+    return err
 
 
 def _add_and_count_hits(repo_id, nocount):
