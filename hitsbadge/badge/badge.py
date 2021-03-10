@@ -27,13 +27,9 @@ def svg(provider_name, user_name, repo_name):
     if not repo:
         return _repo_not_found()
 
-    repo_id, err = _get_repo_id(provider['id'], repo[provider['id_field_name']])
+    repo_id, err = _create_or_update_repo(provider, repo)
     if err:
         return abort(500)
-    if not repo_id:
-        repo_id, err = _create_repo(provider, repo)
-        if err:
-            return abort(500)
 
     nocount = request.args.get('nocount', default=False, type=lambda x: x == '1')
     counter, err = _add_and_count_hits(repo_id, nocount)
@@ -101,6 +97,21 @@ def _get_repo_id(provider_id, internal_id):
     return result[0] if result else None, None
 
 
+def _create_or_update_repo(provider, repo):
+    repo_id, err = _get_repo_id(provider['id'], repo[provider['id_field_name']])
+    if err:
+        return None, err
+
+    if not repo_id:
+        repo_id, err = _create_repo(provider, repo)
+    else:
+        err = _update_repo(repo_id, repo)
+    if err:
+        return None, err
+
+    return repo_id, None
+
+
 def _create_repo(provider, repo):
     query = '''
             INSERT INTO
@@ -116,6 +127,20 @@ def _create_repo(provider, repo):
         return None, err
 
     return result[0][0] if result else None, None
+
+
+def _update_repo(repo_id, repo):
+    query = '''
+            UPDATE
+                repos r
+            SET
+                name = %(name)s
+            WHERE
+                r.id = %(repo_id)s;
+            '''
+    vars_ = {'name': repo['name'], 'repo_id': repo_id}
+    _, err = db.execute(query, vars_)
+    return err
 
 
 def _add_and_count_hits(repo_id, nocount):
