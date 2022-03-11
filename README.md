@@ -1,4 +1,4 @@
-[![hits](https://hits.deltapapa.io/github/dp92987/hits-badge.svg)](https://hits.deltapapa.io) [![Build Status](https://travis-ci.com/dp92987/hits-badge.svg?branch=master)](https://travis-ci.com/dp92987/hits-badge)
+[![hits](https://hits.deltapapa.io/github/dp92987/hits-badge.svg)](https://hits.deltapapa.io) [![Build Status](https://api.travis-ci.com/dp92987/hits-badge.svg?branch=master)](https://app.travis-ci.com/dp92987/hits-badge)
 
 # Hits Badge
 
