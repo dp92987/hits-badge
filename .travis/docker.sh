@@ -15,15 +15,15 @@ elif [ $ENV == development ]; then
   WORKERS=1
 fi
 
-sudo docker pull $DOCKER_IMAGE
+docker pull $DOCKER_IMAGE
 
-CONTAINER_ID=$(sudo docker ps -aqf "name=${APP}_$ENV")
+CONTAINER_ID=$(docker ps -aqf "name=${APP}_$ENV")
 
 if ! [ -z $CONTAINER_ID ]; then
-  sudo docker stop $CONTAINER_ID
-  sudo docker rm $CONTAINER_ID
+  docker stop $CONTAINER_ID
+  docker rm $CONTAINER_ID
 fi
 
-sudo docker run --detach --name ${APP}_$ENV --env FLASK_ENV=$ENV --env WORKERS=$WORKERS --restart=always --publish 127.0.0.1:$PORT:5000 --volume /home/$USER/.$APP:/usr/$APP/instance $DOCKER_IMAGE
+docker run --detach --name ${APP}_$ENV --env FLASK_ENV=$ENV --env WORKERS=$WORKERS --restart=always --publish 127.0.0.1:$PORT:5000 --volume /home/$USER/.$APP:/usr/$APP/instance $DOCKER_IMAGE
 
-sudo docker system prune -f
+docker system prune -f
